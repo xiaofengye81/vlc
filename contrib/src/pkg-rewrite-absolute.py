@@ -16,7 +16,14 @@ class PkgConfigFile():
 
     def parse_pc_line(self, line):
         for i, c in enumerate(line):
-            if c == '=':
+            if c == ':':
+                # This is a pkg-config keyword line
+                key = line[:i].strip()
+                val = line[(i + 1):].strip()
+
+                self.pc_keywords.update({ key : val })
+                break
+            elif c == '=':
                 # This is a pkg-config variable line
                 key = line[:i].strip()
                 val = line[(i + 1):].strip()
@@ -26,13 +33,6 @@ class PkgConfigFile():
 
                 # Add expanded version of variable
                 self.pc_variables_expanded.update({ key : self.expand_pc_vars(val) })
-                break
-            elif c == ':':
-                # This is a pkg-config keyword line
-                key = line[:i].strip()
-                val = line[(i + 1):].strip()
-
-                self.pc_keywords.update({ key : val })
                 break
 
     def expand_pc_vars(self, line):
@@ -48,23 +48,21 @@ class PkgConfigFile():
 
     def get_keyword(self, key, expand=True):
         keyword = self.pc_keywords.get(key, None)
-        if expand and keyword != None:
-            return self.expand_pc_vars(keyword)
-        else:
-            return keyword
+        return self.expand_pc_vars(keyword) if expand and keyword != None else keyword
 
     def set_keyword(self, key, value):
         self.pc_keywords.update({ key : value })
 
     def write(self, file):
-        pc_contents = ''
-        # Print variables
-        for key, val in self.pc_variables.items():
-            pc_contents += key + '=' + val + '\n'
-        pc_contents += '\n'
+        pc_contents = (
+            ''.join(
+                f'{key}={val}' + '\n' for key, val in self.pc_variables.items()
+            )
+            + '\n'
+        )
         # Print keywords
         for key, val in self.pc_keywords.items():
-            pc_contents += key + ': ' + val + '\n'
+            pc_contents += f'{key}: {val}' + '\n'
 
         file.write(pc_contents)
 
@@ -97,9 +95,9 @@ def rewrite_abs_to_rel(pc_file):
             # Remove lib prefix and .a suffix
             lib_name = remove_str_fix(lib_filename, 'lib', '.a')
             if lib_path not in lib_paths:
-                out_args.append('-L' + lib_path)
+                out_args.append(f'-L{lib_path}')
                 lib_paths.append(lib_path)
-            out_args.append('-l' + lib_name)
+            out_args.append(f'-l{lib_name}')
         else:
             out_args.append(arg)
 

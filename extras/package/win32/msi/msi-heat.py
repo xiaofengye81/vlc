@@ -44,7 +44,7 @@ def generate_id(prefix='', file=''):
 args.out.write('<?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n')
 args.out.write('<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">\r\n')
 args.out.write('    <Fragment>\r\n')
-args.out.write('        <DirectoryRef Id="{}">\r\n'.format(args.directory_reference))
+args.out.write(f'        <DirectoryRef Id="{args.directory_reference}">\r\n')
 
 # args.out.write('            <Directory Id="{}" Name="{}">\r\n'.format(generate_id('dir', args.dir.name), args.dir.name))
 
@@ -53,24 +53,24 @@ fileIdList =[]
 def outputDir(top, parent: str, dir: str, with_pdb: bool):
     cwd = top.joinpath(parent).joinpath(dir)
     dirName = os.path.join(parent, dir)
-    if dir=='':
+    if not dir:
         dir = top.name
         dirId = generate_id('dir', os.path.join(top.name, dir))
     else:
         dirId = generate_id('dir', os.path.join(parent, dir))
-    args.out.write('                <Directory Id="{}" Name="{}">\r\n'.format(dirId, dir))
+    args.out.write(f'                <Directory Id="{dirId}" Name="{dir}">\r\n')
     if cwd.is_dir():
         # first list files
         for file in cwd.iterdir():
-            if not file.is_dir():
-                # args.out.write('          file   <{}>\r\n'.format(file))
-                if not file.name.endswith('.pdb'):
-                    outname = os.path.join(top.name, file.relative_to(top))
-                    fileId = generate_id('cmp', outname)
-                    args.out.write('                    <Component Id="{}" Guid="*">\r\n'.format(fileId))
-                    fileIdList.append(fileId)
-                    args.out.write('                        <File Id="{}" Name="{}" KeyPath="yes" Source="{}"/>\r\n'.format(generate_id('fil', outname), file.name, outname))
-                    args.out.write('                    </Component>\r\n')
+            if not file.is_dir() and not file.name.endswith('.pdb'):
+                outname = os.path.join(top.name, file.relative_to(top))
+                fileId = generate_id('cmp', outname)
+                args.out.write(f'                    <Component Id="{fileId}" Guid="*">\r\n')
+                fileIdList.append(fileId)
+                args.out.write(
+                    f"""                        <File Id="{generate_id('fil', outname)}" Name="{file.name}" KeyPath="yes" Source="{outname}"/>\r\n"""
+                )
+                args.out.write('                    </Component>\r\n')
         # then sub directories
         for file in cwd.iterdir():
             if file.is_dir():
@@ -88,9 +88,9 @@ args.out.write('        </DirectoryRef>\r\n')
 args.out.write('    </Fragment>\r\n')
 
 args.out.write('    <Fragment>\r\n')
-args.out.write('        <ComponentGroup Id="{}">\r\n'.format(args.component_group))
+args.out.write(f'        <ComponentGroup Id="{args.component_group}">\r\n')
 for name in fileIdList:
-    args.out.write('                    <ComponentRef Id="{}"/>\r\n'.format(name))
+    args.out.write(f'                    <ComponentRef Id="{name}"/>\r\n')
 args.out.write('        </ComponentGroup>\r\n')
 args.out.write('    </Fragment>\r\n')
 

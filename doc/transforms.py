@@ -24,11 +24,11 @@ def vector (N):
 def W (k, N):
     return exp_j ((-2*pi*k)/N)
 
-def unscaled_DFT (N, input, output):
+def unscaled_DFT(N, input, output):
     for o in range(N):		# o is output index
-	output[o] = 0
-	for i in range(N):
-	    output[o] = output[o] + input[i] * W (i*o, N)
+        output[o] = 0
+        for i in range(N):
+            output[o] += input[i] * W (i*o, N)
 
 # This algorithm takes complex input and output. There are N*N complex
 # multiplications and N*(N-1) complex additions.
@@ -785,11 +785,11 @@ def complex2real_unscaled_DFT_split_radix_time (N, input, output):
 def C (k, N):
     return cos ((k*pi)/(2*N))
 
-def unscaled_DCT (N, input, output):
+def unscaled_DCT(N, input, output):
     for o in range(N):		# o is output index
-	output[o] = 0
-	for i in range(N):	# i is input index
-	    output[o] = output[o] + input[i] * C ((2*i+1)*o, N)
+        output[o] = 0
+        for i in range(N):	# i is input index
+            output[o] += input[i] * C ((2*i+1)*o, N)
 
 # This trivial algorithm uses N*N multiplications and N*(N-1) additions.
 
@@ -1048,20 +1048,20 @@ def symetrical_unscaled_DFT (N, input, output):
 
 # TEST CODE
 
-def dump (vector):
+def dump(vector):
     str = ""
     for i in range(len(vector)):
-	if i:
-	    str = str + ", "
-	vector[i] = vector[i] + 0j
-	realstr = "%+.4f" % vector[i].real
-	imagstr = "%+.4fj" % vector[i].imag
-	if (realstr == "-0.0000"):
-	    realstr = "+0.0000"
-	if (imagstr == "-0.0000j"):
-	    imagstr = "+0.0000j"
-	str = str + realstr #+ imagstr
-    return "[%s]" % str
+        if i:
+            str = f"{str}, "
+        vector[i] = vector[i] + 0j
+        realstr = "%+.4f" % vector[i].real
+        imagstr = "%+.4fj" % vector[i].imag
+        if (realstr == "-0.0000"):
+            realstr = "+0.0000"
+        if (imagstr == "-0.0000j"):
+            imagstr = "+0.0000j"
+        str = str + realstr #+ imagstr
+    return f"[{str}]"
 
 def test(N):
     input = vector(N)
@@ -1093,65 +1093,65 @@ def display (table):
 
 best_complex_DFT = {}
 
-def complex_DFT (max_N):
+def complex_DFT(max_N):
     best_complex_DFT[1] = (0,0,0)
     best_complex_DFT[2] = (4,0,0)
     best_complex_DFT[4] = (16,0,0)
     N = 8
     while (N<=max_N):
-	# best method = split radix
-	best2 = best_complex_DFT[N/2]
-	best4 = best_complex_DFT[N/4]
-	best_complex_DFT[N] = (best2[0] + 2*best4[0] + 3*N + 4,
-			       best2[1] + 2*best4[1] + 4,
-			       best2[2] + 2*best4[2] + N/2 - 4)
-	N = 2*N
+        # best method = split radix
+        best2 = best_complex_DFT[N/2]
+        best4 = best_complex_DFT[N/4]
+        best_complex_DFT[N] = (best2[0] + 2*best4[0] + 3*N + 4,
+        		       best2[1] + 2*best4[1] + 4,
+        		       best2[2] + 2*best4[2] + N/2 - 4)
+        N *= 2
 
 best_real_DFT = {}
 
-def real_DFT (max_N):
+def real_DFT(max_N):
     best_real_DFT[1] = (0,0,0)
     best_real_DFT[2] = (2,0,0)
     best_real_DFT[4] = (6,0,0)
     N = 8
     while (N<=max_N):
-	# best method = split radix decimate-in-frequency
-	best2 = best_real_DFT[N/2]
-	best4 = best_complex_DFT[N/4]
-	best_real_DFT[N] = (best2[0] + best4[0] + N + 2,
-			    best2[1] + best4[1] + 2,
-			    best2[2] + best4[2] + N/4 - 2)
-	N = 2*N
+        # best method = split radix decimate-in-frequency
+        best2 = best_real_DFT[N/2]
+        best4 = best_complex_DFT[N/4]
+        best_real_DFT[N] = (best2[0] + best4[0] + N + 2,
+        		    best2[1] + best4[1] + 2,
+        		    best2[2] + best4[2] + N/4 - 2)
+        N *= 2
 
 best_complex2real_DFT = {}
 
-def complex2real_DFT (max_N):
+def complex2real_DFT(max_N):
     best_complex2real_DFT[1] = (0,0,0)
     best_complex2real_DFT[2] = (2,0,0)
     best_complex2real_DFT[4] = (8,0,0)
     N = 8
     while (N<=max_N):
-	best2 = best_complex2real_DFT[N/2]
-	best4 = best_complex_DFT[N/4]
-	best_complex2real_DFT[N] = (best2[0] + best4[0] + 3*N/2 + 1,
-				    best2[1] + best4[1] + 2,
-				    best2[2] + best4[2] + N/4 - 2)
-	N = 2*N
+        best2 = best_complex2real_DFT[N/2]
+        best4 = best_complex_DFT[N/4]
+        best_complex2real_DFT[N] = (best2[0] + best4[0] + 3*N/2 + 1,
+        			    best2[1] + best4[1] + 2,
+        			    best2[2] + best4[2] + N/4 - 2)
+        N *= 2
 
 best_real_symetric_DFT = {}
 
-def real_symetric_DFT (max_N):
+def real_symetric_DFT(max_N):
     best_real_symetric_DFT[1] = (0,0,0)
     best_real_symetric_DFT[2] = (0,0,0)
     best_real_symetric_DFT[4] = (2,0,0)
     N = 8
     while (N<=max_N):
-	best2 = best_real_symetric_DFT[N/2]
-	best4 = best_complex2real_DFT[N/4]
-	best_real_symetric_DFT[N] = (best2[0] + best4[0] + 3*N/4 - 1,
-				     best2[1] + best4[1] + N/2 - 3,
-				     best2[2] + best4[2])
-	N = 2*N
+        best2 = best_real_symetric_DFT[N/2]
+        best4 = best_complex2real_DFT[N/4]
+        best_real_symetric_DFT[N] = (best2[0] + best4[0] + 3*N/4 - 1,
+        			     best2[1] + best4[1] + N/2 - 3,
+        			     best2[2] + best4[2])
+        N *= 2
 
 complex_DFT (65536)
 real_DFT (65536)

@@ -45,10 +45,10 @@ def url_extract(url):
 
     if 'entries' in infos:
         for entry in infos['entries']:
-             if 'ie_key' in entry and entry['ie_key']:
+            if 'ie_key' in entry and entry['ie_key']:
                  # Flat-extracted playlist entry
-                 url = 'ytdl:///?' + urllib.parse.urlencode(entry)
-                 entry['url'] = url;
+                url = f'ytdl:///?{urllib.parse.urlencode(entry)}'
+                entry['url'] = url;
 
     print(json.dumps(infos))
 
@@ -60,12 +60,7 @@ def url_process(ie_url):
 
     dl = yt_dlp.YoutubeDL(opts)
 
-    # Rebuild the original IE entry
-    entry = { }
-
-    for p in urllib.parse.parse_qsl(url[9:]):
-        entry[p[0]] = p[1]
-
+    entry = {p[0]: p[1] for p in urllib.parse.parse_qsl(url[9:])}
     infos = dl.process_ie_result(entry, download=False)
     print(json.dumps(infos))
 

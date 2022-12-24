@@ -7,11 +7,11 @@
 
 import string
 
-deffile = open("builder_data.def")
-hppfile = open("builder_data.hpp","w")
+with open("builder_data.def") as deffile:
+    hppfile = open("builder_data.hpp","w")
 
-hppfile.write(
-"""/*****************************************************************************
+    hppfile.write(
+    """/*****************************************************************************
  * builder_data.hpp
  *****************************************************************************
  * Copyright (C) 2003 the VideoLAN team
@@ -54,45 +54,44 @@ struct BuilderData
 
 """)
 
-while 1:
-    line = string.strip(deffile.readline())
-    if line == "":
-        break
-    items = string.split(line, ' ')
-    name = items[0]
-    str = "    /// Type definition\n"
-    str += "    struct " + name + "\n    {\n"
-    str += "        " + name + "( "
-    constructor = ""
-    initlist = ""
-    vars = ""
-    for var in items[1:]:
-        vardef = string.split(var, ':');
-        varname = vardef[0]
-        vartype = vardef[1]
-        if vartype == "string":
-            vartype = "const string &"
-        if constructor != "":
-            constructor += ", "
-        constructor += vartype + " " + varname
-        if initlist != "":
-            initlist += ", "
-        initlist += "m_" + varname + "( " + varname + " )"
-        vartype = vardef[1]
-        vars += "        " + vartype + " m_" + varname + ";\n"
-    str += constructor + " ):\n" + initlist + " {}\n\n"
-    str += vars + "    };\n"
-    str += "    /// List\n"
-    str += "    list<" + name + "> m_list" + name + ";\n"
-    str += "\n"
-    hppfile.write(str)
+    while 1:
+        line = string.strip(deffile.readline())
+        if line == "":
+            break
+        items = string.split(line, ' ')
+        name = items[0]
+        str = "    /// Type definition\n"
+        str += f"    struct {name}" + "\n    {\n"
+        str += f"        {name}( "
+        constructor = ""
+        initlist = ""
+        vars = ""
+        for var in items[1:]:
+            vardef = string.split(var, ':');
+            varname = vardef[0]
+            vartype = vardef[1]
+            if vartype == "string":
+                vartype = "const string &"
+            if constructor != "":
+                constructor += ", "
+            constructor += f"{vartype} {varname}"
+            if initlist != "":
+                initlist += ", "
+            initlist += f"m_{varname}( {varname} )"
+            vartype = vardef[1]
+            vars += f"        {vartype} m_{varname}" + ";\n"
+        str += constructor + " ):\n" + initlist + " {}\n\n"
+        str += vars + "    };\n"
+        str += "    /// List\n"
+        str += f"    list<{name}> m_list{name}" + ";\n"
+        str += "\n"
+        hppfile.write(str)
 
-hppfile.write(
-"""
+    hppfile.write(
+    """
 };
 
 #endif
 """)
 
-deffile.close()
 hppfile.close()

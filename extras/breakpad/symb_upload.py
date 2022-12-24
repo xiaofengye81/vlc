@@ -41,7 +41,7 @@ class Dumper:
                 meta["code_file"] = filename
                 #see CompactIdentifier in symbol_upload.cc
                 meta["debug_identifier"] = buildid.replace("-", "")
-                dest.write("MODULE {} {} {} {}".format(_os, cpu, buildid, filename))
+                dest.write(f"MODULE {_os} {cpu} {buildid} {filename}")
                 dest.write("\n")
             elif line.startswith("FILE"):
                 #FILE <LINE> <PATH>
@@ -52,7 +52,7 @@ class Dumper:
                 if self.strip_path and path.startswith(self.strip_path):
                     path = os.path.relpath(path, self.strip_path)
 
-                dest.write("FILE {} {}\n".format(line, path))
+                dest.write(f"FILE {line} {path}\n")
             else:
                 dest.write(line)
                 dest.write("\n")
@@ -72,8 +72,8 @@ class WindowDumper(Dumper):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-        if  proc.returncode != 0:
-            logging.error("unable to extract symbols from {}".format(fpath))
+        if proc.returncode != 0:
+            logging.error(f"unable to extract symbols from {fpath}")
             logging.error(proc.stderr)
             return None, None
         return self._preparse_dump(proc.stdout.decode("utf8"))
@@ -84,22 +84,15 @@ class MacDumper(Dumper):
 
     # Helper to check Mach-O header
     def is_mach_o(self, fpath: str):
-        file = open(fpath, "rb")
-        header = file.read(4)
-        file.close()
+        with open(fpath, "rb") as file:
+            header = file.read(4)
         # MH_MAGIC
-        if b'\xFE\xED\xFA\xCE' == header:
-            return True
-        # MH_CIGAM
-        elif b'\xCE\xFA\xED\xFE' == header:
-            return True
-        # MH_MAGIC_64
-        elif b'\xFE\xED\xFA\xCF' == header:
-            return True
-        # MH_CIGAM_64
-        elif b'\xCF\xFA\xED\xFE' == header:
-            return True
-        return False
+        return header in [
+            b'\xFE\xED\xFA\xCE',
+            b'\xCE\xFA\xED\xFE',
+            b'\xFE\xED\xFA\xCF',
+            b'\xCF\xFA\xED\xFE',
+        ]
 
     def can_process(self, fpath: str):
         if fpath.endswith(".dylib") or os.access(fpath, os.X_OK):
@@ -107,7 +100,7 @@ class MacDumper(Dumper):
         return False
 
     def dump(self, fpath: str):
-        dsymbundle = fpath + ".dSYM"
+        dsymbundle = f"{fpath}.dSYM"
         if os.path.exists(dsymbundle):
             shutil.rmtree(dsymbundle)
 
@@ -118,12 +111,12 @@ class MacDumper(Dumper):
             stderr=subprocess.PIPE,
             check=True
         )
-        if  proc.returncode != 0:
-            logging.error("unable to run dsymutil on {}:".format(fpath))
+        if proc.returncode != 0:
+            logging.error(f"unable to run dsymutil on {fpath}:")
             logging.error(proc.stderr)
             return None, None
         if not os.path.exists(dsymbundle):
-            logging.error("No symbols in {}".format(fpath))
+            logging.error(f"No symbols in {fpath}")
             return None, None
 
         proc = subprocess.run(
@@ -135,8 +128,8 @@ class MacDumper(Dumper):
         # Cleanup dsymbundle file
         shutil.rmtree(dsymbundle)
 
-        if  proc.returncode != 0:
-            logging.error("unable to extract symbols from {}:".format(fpath))
+        if proc.returncode != 0:
+            logging.error(f"unable to extract symbols from {fpath}:")
             logging.error(proc.stderr)
             return None, None
 
@@ -161,7 +154,7 @@ class HTTPOutputStore(OutputStore):
         post_args = {**meta, **self.extra_args}
         r = requests.post(self.url, post_args, files={"symfile": dump})
         if not r.ok:
-            logging.error("Unable to perform request, ret {}".format(r.status_code))
+            logging.error(f"Unable to perform request, ret {r.status_code}")
             r.raise_for_status()
 
 class LocalDirOutputStore(OutputStore):
@@ -181,10 +174,10 @@ def process_dir(sourcedir, dumper, store):
         for fname in filenames:
             if not dumper.can_process(os.path.join(root, fname)):
                 continue
-            logging.info("processing {}".format(fname))
+            logging.info(f"processing {fname}")
             meta, dump = dumper.dump(os.path.join(root, fname))
             if meta is None or dump is None:
-                logging.warning("unable to dump {}".format(fname))
+                logging.warning(f"unable to dump {fname}")
                 continue
             store.store(dump, meta)
 
@@ -205,7 +198,7 @@ def main():
     if args.log:
         numeric_level = getattr(logging, args.log.upper(), None)
         if not isinstance(numeric_level, int):
-            raise ValueError("Invalid log level: {}".format(loglevel))
+            raise ValueError(f"Invalid log level: {loglevel}")
         logging.basicConfig(format='%(levelname)s: %(message)s', level=numeric_level)
 
 
@@ -214,7 +207,7 @@ def main():
     elif args.platform == "mac":
         dumper = MacDumper(strip_path=args.strippath)
     else:
-        logging.error("Dumper {} is not implemented yet".format(args.platform))
+        logging.error(f"Dumper {args.platform} is not implemented yet")
         exit(1)
 
     if args.uploadurl:

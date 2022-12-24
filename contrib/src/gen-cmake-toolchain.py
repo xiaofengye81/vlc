@@ -14,14 +14,14 @@ def _add_environ_val(meson_key, env_key):
     env_value = os.environ.get(env_key)
     if env_value != None:
         if " " in env_value:
-            args.file.write("set({} \"{}\")\n".format(meson_key, env_value))
+            args.file.write(f'set({meson_key} \"{env_value}\")\n')
         else:
-            args.file.write("set({} {})\n".format(meson_key, env_value))
+            args.file.write(f"set({meson_key} {env_value})\n")
 
 def _add_environ_val_not_empty(meson_key, env_key):
     env_value = os.environ.get(env_key)
-    if env_value != None and env_value != '':
-        args.file.write("set({} {})\n".format(meson_key, env_value))
+    if env_value not in [None, '']:
+        args.file.write(f"set({meson_key} {env_value})\n")
 
 
 # Generate meson crossfile
@@ -56,6 +56,6 @@ _add_environ_val('CMAKE_FIND_ROOT_PATH_MODE_INCLUDE', 'PATH_MODE_INCLUDE')
 
 # final includes
 env_value = os.environ.get('EXTRA_INCLUDE')
-if env_value != None and env_value != '':
-    args.file.write("include({})\n".format(env_value))
+if env_value not in [None, '']:
+    args.file.write(f"include({env_value})\n")
 
