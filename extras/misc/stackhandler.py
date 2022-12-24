@@ -116,16 +116,14 @@ def processFile(filename):
     moveFile(filename, outdated = False)
 
 def isValidVersion(content):
-    pattern = re.compile(r"^VLC=%s " % VLC_VERSION, re.MULTILINE)
+    pattern = re.compile(f"^VLC={VLC_VERSION} ", re.MULTILINE)
     res = pattern.search(content)
-    return True if res else False
+    return bool(res)
 
 def getWinVersion(content):
     pattern = re.compile(r"^OS=(.*)$", re.MULTILINE)
     res = pattern.search(content)
-    if res is not None:
-        return res.group(1)
-    return None
+    return res[1] if res is not None else None
 
 def getDiffAddress(content, name):
     plugin_name_section = content.find(name)
@@ -142,11 +140,10 @@ def getDiffAddress(content, name):
     if not os.path.isfile(full_path):
         return None
 
-    cmd = "objdump -p " + full_path + " |grep ImageBase -|cut -f2-"
+    cmd = f"objdump -p {full_path} |grep ImageBase -|cut -f2-"
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True).stdout.read().strip()
 
-    diff = int(content[begin_index:end_index], 16) - int(p, 16)
-    return diff
+    return int(content[begin_index:end_index], 16) - int(p, 16)
 
 def mapLibraries(content):
     stacktrace_section = content.find("[stacktrace]")
@@ -164,9 +161,7 @@ def mapLibraries(content):
         if m is not None:
             mapping.append(m.group(1, 2))
 
-    if len(mapping) == 0:
-        return None
-    return mapping
+    return mapping or None
 
 
 def sortEIP(content, mapping):
@@ -182,11 +177,7 @@ def sortEIP(content, mapping):
         if libname not in libs:
             libs[libname] = []
             diff = getDiffAddress(content, item[1])
-            if diff is not None:
-                libs_address[libname] = diff
-            else:
-                libs_address[libname] = 0
-
+            libs_address[libname] = diff if diff is not None else 0
         libs[libname].append(int(item[0],16) - libs_address[libname])
 
     return libs,libs_address
@@ -215,14 +206,14 @@ def findSymbols(sortedEIP):
         # Parse result
         gdb_pattern = re.compile(r"^\$\d+ = (.+)$")
         cnt = 0
-        while p.poll() == None:
+        while p.poll() is None:
             o = p.stdout.readline()
             if o != b'':
                 o = bytes.decode(o)
                 m = gdb_pattern.match(o)
                 if m is not None:
                     #print("LINE: [%s]" % m.group(1))
-                    eipmap[v[cnt]] = m.group(1)
+                    eipmap[v[cnt]] = m[1]
                     cnt += 1
         batchfile.close()
     return eipmap
@@ -230,15 +221,13 @@ def findSymbols(sortedEIP):
 
 def genEmailBody(mapping, eipmap, delta_libs):
     stacktrace = ""
-    cnt = 0
-    for item in mapping:
+    for cnt, item in enumerate(mapping):
         index = item[1].rfind('\\')
         libname = item[1][index + 1:]
         print(int(item[0],16), delta_libs[libname])
         #print(eipmap)
         #print(mapping)
         stacktrace += "%d. %s [in %s]\n" % (cnt, eipmap[int(item[0],16)-delta_libs[libname]], item[1])
-        cnt += 1
     stacktrace = stacktrace.rstrip('\n')
     return EMAIL_BODY % {"STACKTRACE": stacktrace, "WIN32_VERSION": win32_version}
 
@@ -257,16 +246,16 @@ def sendEmail(body):
 
 def moveFile(filename, outdated = False):
     today = datetime.datetime.now().strftime("%Y%m%d")
-    today_path = "%s/%s" % (WORKDIR, today)
+    today_path = f"{WORKDIR}/{today}"
     if not os.path.isdir(today_path):
         os.mkdir(today_path)
     if not outdated:
-        shutil.move(filename, "%s/%s" % (today_path, os.path.basename(filename)))
+        shutil.move(filename, f"{today_path}/{os.path.basename(filename)}")
     else:
-        outdated_path = "%s/outdated/" % today_path
+        outdated_path = f"{today_path}/outdated/"
         if not os.path.isdir(outdated_path):
             os.mkdir(outdated_path)
-        shutil.move(filename, "%s/%s" % (outdated_path, os.path.basename(filename)))
+        shutil.move(filename, f"{outdated_path}/{os.path.basename(filename)}")
 
 
 ### ENTRY POINT ###
@@ -284,7 +273,7 @@ else:
     file_pattern = re.compile(FILE_MATCH)
     entries = os.listdir(WORKDIR)
     for entry in entries:
-        path_entry = WORKDIR + "/" + entry
+        path_entry = f"{WORKDIR}/{entry}"
         if not os.path.isfile(path_entry):
             continue
         if not file_pattern.match(entry):
@@ -292,7 +281,7 @@ else:
             os.remove(path_entry)
             continue
         if os.path.getsize(path_entry) > FILE_MAX_SIZE:
-            print("%s is too big" % entry)
+            print(f"{entry} is too big")
             os.remove(path_entry)
             continue
         input_files.append(path_entry)

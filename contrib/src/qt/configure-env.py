@@ -11,11 +11,11 @@ args, remaining = parser.parse_known_args()
 
 all_params = []
 if args.D:
-    all_params += ['-D ' + sub for sub in args.D]
+    all_params += [f'-D {sub}' for sub in args.D]
 if args.I:
-    all_params += ['-I ' + sub for sub in args.I]
+    all_params += [f'-I {sub}' for sub in args.I]
 if args.L:
-    all_params += ['-L ' + sub for sub in args.L]
+    all_params += [f'-L {sub}' for sub in args.L]
 
 if all_params:
     print(' '.join(all_params))

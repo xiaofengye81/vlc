@@ -66,11 +66,11 @@ def NameOwnerChanged(name, new, old):
 
 def PropGet(prop):
     global props
-    return props.Get(mpris + '.Player', prop)
+    return props.Get(f'{mpris}.Player', prop)
 
 def PropSet(prop, val):
     global props
-    props.Set(mpris + '.Player', prop, val)
+    props.Set(f'{mpris}.Player', prop, val)
 
 # Callback for when 'TrackChange' signal is emitted
 def TrackChange(Track):
@@ -103,8 +103,8 @@ def Connect(name):
 
     root_o = bus.get_object(name, '/org/mpris/MediaPlayer2')
     root        = dbus.Interface(root_o, mpris)
-    tracklist   = dbus.Interface(root_o, mpris + '.TrackList')
-    player      = dbus.Interface(root_o, mpris + '.Player')
+    tracklist = dbus.Interface(root_o, f'{mpris}.TrackList')
+    player = dbus.Interface(root_o, f'{mpris}.Player')
     props       = dbus.Interface(root_o, dbus.PROPERTIES_IFACE)
 
     # FIXME : doesn't exist anymore in mpris 2.1
@@ -121,13 +121,13 @@ def Connect(name):
 #plays an element
 def AddTrack(widget):
     mrl = e_mrl.get_text()
-    if mrl != None and mrl != '':
+    if mrl not in [None, '']:
         tracklist.AddTrack(mrl, '/', True)
         e_mrl.set_text('')
     else:
         mrl = bt_file.get_filename()
-        if mrl != None and mrl != '':
-            tracklist.AddTrack('directory://' + mrl, '/', True)
+        if mrl not in [None, '']:
+            tracklist.AddTrack(f'directory://{mrl}', '/', True)
     update(0)
 
 # basic control
